@@ -1,0 +1,8 @@
+__pycache__/
+*.pyc
+models/
+*.onnx
+*.bin
+*.json
+.env
+.pytest_cache/

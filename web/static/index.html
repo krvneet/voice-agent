@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Smart Scheduler — Voice Assistant</title>
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+  <main class="card">
+    <header>
+      <h1>Smart Scheduler</h1>
+      <p class="tagline">Talk to schedule a meeting.</p>
+    </header>
+
+    <div class="orb" id="orb" data-state="idle">
+      <span class="orb-core"></span>
+    </div>
+
+    <p class="status" id="status">Tap connect and start speaking.</p>
+
+    <button id="toggle" class="btn">Connect</button>
+
+    <section class="transcript" id="transcript" aria-live="polite"></section>
+  </main>
+
+  <!-- Vendored locally so the handover link has no external CDN dependency. -->
+  <script src="./livekit-client.umd.min.js"></script>
+  <script src="./app.js"></script>
+</body>
+</html>

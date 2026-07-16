@@ -1,0 +1,24 @@
+# Secrets / credentials
+.env
+*.json
+!**/package.json
+gcal-sa.json
+service-account*.json
+
+# Python
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+*.egg-info/
+
+# Models (baked into image at build; not committed)
+agent/models/
+*.onnx
+*.bin
+!voices-*.bin.keep
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
