@@ -2,8 +2,9 @@
 
 Registers a LiveKit Agents worker (with no ``agent_name`` → automatic dispatch,
 so it joins every room the browser connects to). Builds one AgentSession per
-call, wiring Groq STT/LLM, in-process Kokoro TTS, Silero VAD, and the LiveKit
-turn detector, driven by the SchedulerAgent and its calendar tools.
+call, wiring resilient STT/LLM/TTS (LiveKit Inference primaries with fallbacks),
+Silero VAD, and the LiveKit turn detector, driven by the SchedulerAgent and its
+calendar tools.
 
 Run locally:   python agent.py dev
 Run in cloud:  python agent.py start
@@ -24,29 +25,33 @@ from livekit.agents import (
     cli,
 )
 from livekit.plugins import groq, silero
+# Local turn detector disabled — using hosted inference.TurnDetector() instead
+# (no local ONNX model, much lighter on a small VM).
 from livekit.plugins.turn_detector.multilingual import MultilingualModel
 
 from livekit.agents import llm, stt, tts, inference
 
 from calendar_client import CalendarClient
 from config import get_settings
-from kokoro_tts import KokoroTTS, load_kokoro
+# Kokoro TTS disabled — using LiveKit Inference (Cartesia/Inworld) TTS instead.
+# from kokoro_tts import KokoroTTS, load_kokoro
 from scheduler_agent import SchedulerAgent
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("agent")
 
 
-# Default model location: agent/models/ (works regardless of the launch dir).
-_MODELS_DIR = os.path.dirname(os.path.abspath(__file__)) + "/models"
+# Kokoro no longer used:
+# _MODELS_DIR = os.path.dirname(os.path.abspath(__file__)) + "/models"
 
 
 def prewarm(proc: JobProcess) -> None:
     """Load heavy, reusable models once per worker process."""
     proc.userdata["vad"] = silero.VAD.load()
-    model_path = os.getenv("KOKORO_MODEL_PATH", f"{_MODELS_DIR}/kokoro-v1.0.onnx")
-    voices_path = os.getenv("KOKORO_VOICES_PATH", f"{_MODELS_DIR}/voices-v1.0.bin")
-    proc.userdata["kokoro"] = load_kokoro(model_path, voices_path)
+    # Kokoro TTS disabled (in-process model no longer loaded):
+    # model_path = os.getenv("KOKORO_MODEL_PATH", f"{_MODELS_DIR}/kokoro-v1.0.onnx")
+    # voices_path = os.getenv("KOKORO_VOICES_PATH", f"{_MODELS_DIR}/voices-v1.0.bin")
+    # proc.userdata["kokoro"] = load_kokoro(model_path, voices_path)
 
 
 def _build_llm(settings):
@@ -112,7 +117,7 @@ async def entrypoint(ctx: JobContext) -> None:
         llm=resilient_llm,
         tts=resilient_tts,
         vad=ctx.proc.userdata["vad"],
-        turn_detection=MultilingualModel(),
+        turn_detection=MultilingualModel(),  # hosted; no local model
         preemptive_generation=True,
     )
 
@@ -140,5 +145,9 @@ if __name__ == "__main__":
             prewarm_fnc=prewarm,
             host="0.0.0.0",
             port=int(os.environ.get("PORT", "8081")),
+            # Small-VM tuning: keep only 1 warm process (prod default is 4, which
+            # can starve a small VM's CPU) and allow more time for process init.
+            num_idle_processes=1,
+            initialize_process_timeout=60.0,
         )
     )

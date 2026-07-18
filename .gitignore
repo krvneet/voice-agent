@@ -1,6 +1,7 @@
 # Secrets / credentials
 .env
 *.json
+*.pem
 !**/package.json
 gcal-sa.json
 service-account*.json
@@ -13,7 +14,6 @@ __pycache__/
 *.egg-info/
 
 # Models (baked into image at build; not committed)
-agent/models/
 *.onnx
 *.bin
 !voices-*.bin.keep

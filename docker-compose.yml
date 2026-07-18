@@ -1,0 +1,30 @@
+# Run BOTH services on a single GCP VM with one command:
+#
+#   docker compose up -d --build
+#
+# - agent : LiveKit worker (connects OUT to LiveKit Cloud; needs no inbound port)
+# - web   : public UI + /token server (exposes port 8080)
+#
+# Requires on the VM: Docker + Docker Compose, this repo, a filled-in .env, and
+# the calendar key file ./gcal-sa.json at the repo root.
+services:
+  agent:
+    build: ./agent
+    env_file: .env
+    environment:
+      # Override the .env path: mount the SA key at a fixed absolute path.
+      - GOOGLE_APPLICATION_CREDENTIALS=/secrets/gcal-sa.json
+    volumes:
+      - ./gcal-sa.json:/secrets/gcal-sa.json:ro
+    restart: unless-stopped
+    # Kokoro model is baked into the image at build; `python agent.py start`
+    # is the image's default CMD (production worker mode).
+
+  web:
+    build: ./web
+    env_file: .env
+    ports:
+      - "8080:8080"          # the public entry point (see HTTPS note in README)
+    restart: unless-stopped
+    depends_on:
+      - agent
