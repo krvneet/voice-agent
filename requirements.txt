@@ -18,3 +18,9 @@ google-auth~=2.36
 # Time parsing + misc
 python-dateutil~=2.9
 python-dotenv~=1.0
+
+fastapi~=0.115
+uvicorn[standard]~=0.34
+livekit-api~=1.0
+
+torch
